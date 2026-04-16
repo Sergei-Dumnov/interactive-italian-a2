@@ -7,8 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Chosen Palette: Modern Midnight (Background: #0f172a, Surface: #1e293b, Accent: #10b981, Secondary: #8b5cf6, Text: #f8fafc) -->
-    <!-- Application Structure Plan: A tabbed dashboard layout (Introduzione, Vocabolario, Analisi) was chosen to break down the study guide into digestible, task-oriented views. The dark theme transition uses a high-contrast palette to improve readability and reduce eye strain. Glassmorphism (semi-transparent backgrounds with blurs) is applied to cards for a depth effect. -->
-    <!-- Visualization & Content Choices: Summary text -> Goal: Contextualize -> High contrast sans-serif. Vocabulary -> Goal: Active learning -> Interactive cards with neon-glow accents on hover. Category Stats -> Goal: Inform on learning variety -> Chart.js Doughnut chart (NO SVG) using a vibrant electric palette to stand out against the dark background. -->
+    <!-- Application Structure Plan: A tabbed dashboard layout (Introduzione, Vocabolario, Analisi). The vocabulary section now includes an "Audio" feature using the Web Speech API to provide instant pronunciation feedback for learners. -->
+    <!-- Visualization & Content Choices: Added a 'speak' function in JS. The vocab cards now feature a dedicated audio button that prevents event bubbling (so it doesn't expand the card when clicked). -->
     <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
         :root {
@@ -69,6 +69,16 @@
 
         .vocab-card.expanded .hidden-content { 
             display: block; 
+        }
+
+        .audio-btn {
+            transition: all 0.2s ease;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .audio-btn:hover {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--accent-primary);
+            transform: scale(1.1);
         }
 
         .nav-btn {
@@ -167,7 +177,7 @@
             <div class="mb-10">
                 <h2 class="text-3xl font-bold mb-3 text-white">Glossario Interattivo <span class="text-sm font-normal text-slate-500 ml-2">B2 Mastery</span></h2>
                 <p class="text-lg text-slate-400 mb-8">
-                    Esplora le espressioni più sfidanti. Clicca su ogni scheda per sbloccare traduzioni ed esempi.
+                    Ascolta la pronuncia corretta cliccando sull'icona 🔊. Clicca sulla scheda per vedere esempi e traduzioni.
                 </p>
                 
                 <div class="relative max-w-xl mb-12">
@@ -263,10 +273,31 @@
 
         let chartInstance = null;
 
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                // Cancel existing speech
+                window.speechSynthesis.cancel();
+                
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'it-IT';
+                utterance.rate = 0.9; // Slightly slower for clarity
+                utterance.pitch = 1.0;
+                
+                // Try to find an Italian voice specifically
+                const voices = window.speechSynthesis.getVoices();
+                const italianVoice = voices.find(v => v.lang.includes('it'));
+                if (italianVoice) utterance.voice = italianVoice;
+                
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
         function switchTab(tabId) {
             ['intro', 'vocab', 'stats'].forEach(id => {
-                document.getElementById('sec-' + id).classList.add('hidden');
-                document.getElementById('btn-' + id).classList.remove('active');
+                const el = document.getElementById('sec-' + id);
+                if(el) el.classList.add('hidden');
+                const btn = document.getElementById('btn-' + id);
+                if(btn) btn.classList.remove('active');
             });
             
             document.getElementById('sec-' + tabId).classList.remove('hidden');
@@ -279,28 +310,53 @@
 
         function createVocabCard(data) {
             const card = document.createElement('div');
-            card.className = 'vocab-card rounded-2xl p-6 shadow-sm';
+            card.className = 'vocab-card rounded-2xl p-6 shadow-sm group';
             
             card.innerHTML = `
                 <div class="flex justify-between items-center mb-1">
-                    <h3 class="text-lg font-bold text-white">${data.it}</h3>
+                    <div class="flex items-center gap-3">
+                        <button class="audio-btn p-2 rounded-lg text-slate-400 hover:text-[#10b981]" title="Ascolta pronuncia">
+                            <span class="text-lg">🔊</span>
+                        </button>
+                        <h3 class="text-lg font-bold text-white">${data.it}</h3>
+                    </div>
                     <span class="text-xs font-semibold px-2 py-0.5 rounded bg-white/5 text-slate-500 uppercase tracking-widest">${data.category}</span>
                 </div>
-                <p class="text-slate-500 text-sm">Clicca per espandere</p>
+                <p class="text-slate-500 text-sm pl-11">Clicca per dettagli</p>
                 <div class="hidden-content mt-6 pt-6 border-t border-white/5">
                     <p class="text-lg font-bold text-[#10b981] mb-4">${data.en}</p>
                     <div class="space-y-3">
-                        <div class="p-3 bg-slate-900/50 rounded-xl border border-white/5">
-                            <span class="block text-[10px] text-slate-500 font-bold uppercase mb-1">Esempio 1</span>
-                            <p class="text-sm text-slate-300 italic">"${data.ex1}"</p>
+                        <div class="p-3 bg-slate-900/50 rounded-xl border border-white/5 flex justify-between items-start gap-2">
+                            <div class="flex-grow">
+                                <span class="block text-[10px] text-slate-500 font-bold uppercase mb-1">Esempio 1</span>
+                                <p class="text-sm text-slate-300 italic">"${data.ex1}"</p>
+                            </div>
+                            <button class="example-audio-btn p-1 text-slate-600 hover:text-white" title="Ascolta esempio">🔊</button>
                         </div>
-                        <div class="p-3 bg-slate-900/50 rounded-xl border border-white/5">
-                            <span class="block text-[10px] text-slate-500 font-bold uppercase mb-1">Esempio 2</span>
-                            <p class="text-sm text-slate-300 italic">"${data.ex2}"</p>
+                        <div class="p-3 bg-slate-900/50 rounded-xl border border-white/5 flex justify-between items-start gap-2">
+                            <div class="flex-grow">
+                                <span class="block text-[10px] text-slate-500 font-bold uppercase mb-1">Esempio 2</span>
+                                <p class="text-sm text-slate-300 italic">"${data.ex2}"</p>
+                            </div>
+                            <button class="example-audio-btn p-1 text-slate-600 hover:text-white" title="Ascolta esempio">🔊</button>
                         </div>
                     </div>
                 </div>
             `;
+
+            // Audio button for main word
+            card.querySelector('.audio-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                speak(data.it);
+            });
+
+            // Audio buttons for examples
+            card.querySelectorAll('.example-audio-btn').forEach((btn, index) => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    speak(index === 0 ? data.ex1 : data.ex2);
+                });
+            });
 
             card.addEventListener('click', () => {
                 card.classList.toggle('expanded');
@@ -353,6 +409,13 @@
         }
 
         document.getElementById('searchInput').addEventListener('input', (e) => renderVocab(e.target.value));
+        
+        // Initialize voices for synthesis (some browsers need this event)
+        window.speechSynthesis.onvoiceschanged = () => {
+            // Pre-load voices
+            window.speechSynthesis.getVoices();
+        };
+
         window.addEventListener('DOMContentLoaded', () => renderVocab());
     </script>
 </body>
