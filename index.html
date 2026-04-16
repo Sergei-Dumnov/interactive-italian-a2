@@ -272,24 +272,43 @@
         ];
 
         let chartInstance = null;
+        let voices = [];
+
+        // Function to update voices list
+        function loadVoices() {
+            voices = window.speechSynthesis.getVoices();
+        }
+
+        // Initialize voices for synthesis (handling async loading in Chrome/Safari)
+        if ('speechSynthesis' in window) {
+            loadVoices();
+            if (speechSynthesis.onvoiceschanged !== undefined) {
+                speechSynthesis.onvoiceschanged = loadVoices;
+            }
+        }
 
         function speak(text) {
-            if ('speechSynthesis' in window) {
-                // Cancel existing speech
-                window.speechSynthesis.cancel();
-                
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'it-IT';
-                utterance.rate = 0.9; // Slightly slower for clarity
-                utterance.pitch = 1.0;
-                
-                // Try to find an Italian voice specifically
-                const voices = window.speechSynthesis.getVoices();
-                const italianVoice = voices.find(v => v.lang.includes('it'));
-                if (italianVoice) utterance.voice = italianVoice;
-                
-                window.speechSynthesis.speak(utterance);
+            if (!('speechSynthesis' in window)) return;
+
+            // Stop any current speech
+            window.speechSynthesis.cancel();
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'it-IT';
+            utterance.rate = 0.9;
+            utterance.pitch = 1.0;
+            
+            // Re-fetch voices if empty (common fix for Chrome)
+            if (voices.length === 0) voices = window.speechSynthesis.getVoices();
+            
+            // Try to find an Italian voice specifically, fallback to any starting with 'it'
+            const italianVoice = voices.find(v => v.lang === 'it-IT') || voices.find(v => v.lang.startsWith('it'));
+            
+            if (italianVoice) {
+                utterance.voice = italianVoice;
             }
+            
+            window.speechSynthesis.speak(utterance);
         }
 
         function switchTab(tabId) {
@@ -410,12 +429,6 @@
 
         document.getElementById('searchInput').addEventListener('input', (e) => renderVocab(e.target.value));
         
-        // Initialize voices for synthesis (some browsers need this event)
-        window.speechSynthesis.onvoiceschanged = () => {
-            // Pre-load voices
-            window.speechSynthesis.getVoices();
-        };
-
         window.addEventListener('DOMContentLoaded', () => renderVocab());
     </script>
 </body>
