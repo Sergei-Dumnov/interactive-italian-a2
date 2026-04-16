@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Italiano Interattivo: Conversazioni Quotidiane</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chosen Palette: Modern Midnight (Background: #0f172a, Surface: #1e293b, Accent: #10b981, Secondary: #8b5cf6, Text: #f8fafc) -->
+    <!-- Application Structure Plan: A tabbed dashboard layout (Introduzione, Vocabolario, Analisi) was chosen to break down the study guide into digestible, task-oriented views. The dark theme transition uses a high-contrast palette to improve readability and reduce eye strain. Glassmorphism (semi-transparent backgrounds with blurs) is applied to cards for a depth effect. -->
+    <!-- Visualization & Content Choices: Summary text -> Goal: Contextualize -> High contrast sans-serif. Vocabulary -> Goal: Active learning -> Interactive cards with neon-glow accents on hover. Category Stats -> Goal: Inform on learning variety -> Chart.js Doughnut chart (NO SVG) using a vibrant electric palette to stand out against the dark background. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        :root {
+            --bg-deep: #0f172a;
+            --bg-surface: #1e293b;
+            --accent-primary: #10b981;
+            --accent-secondary: #8b5cf6;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        body { 
+            background-color: var(--bg-deep); 
+            color: var(--text-main); 
+            font-family: 'Inter', system-ui, -apple-system, sans-serif; 
+            letter-spacing: -0.01em;
+        }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+        
+        .vocab-card { 
+            background: var(--bg-surface);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            cursor: pointer;
+        }
+
+        .vocab-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.1);
+        }
+
+        .vocab-card.expanded { 
+            background: rgba(139, 92, 246, 0.05);
+            border-left: 4px solid var(--accent-secondary);
+            border-color: rgba(139, 92, 246, 0.3);
+        }
+
+        .hidden-content { 
+            display: none; 
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .vocab-card.expanded .hidden-content { 
+            display: block; 
+        }
+
+        .nav-btn {
+            color: var(--text-muted);
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .nav-btn.active { 
+            color: var(--accent-primary);
+        }
+
+        .nav-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--accent-primary);
+            box-shadow: 0 0 8px var(--accent-primary);
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-deep);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <nav class="bg-[#0f172a]/80 backdrop-blur-md border-b border-white/5 sticky top-0 z-10">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-2xl mr-2 filter drop-shadow-md">🇮🇹</span>
+                    <span class="font-bold text-xl tracking-tight text-white">Studio<span class="text-[#10b981]">Italiano</span></span>
+                </div>
+                <div class="flex space-x-6">
+                    <button onclick="switchTab('intro')" id="btn-intro" class="nav-btn active px-1 py-2 text-sm font-medium focus:outline-none">📖 Introduzione</button>
+                    <button onclick="switchTab('vocab')" id="btn-vocab" class="nav-btn px-1 py-2 text-sm font-medium focus:outline-none">🧠 Vocabolario</button>
+                    <button onclick="switchTab('stats')" id="btn-stats" class="nav-btn px-1 py-2 text-sm font-medium focus:outline-none">📊 Analisi</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full">
+
+        <!-- INTRO SECTION -->
+        <section id="sec-intro" class="block animate-in fade-in duration-500">
+            <div class="glass-panel rounded-2xl p-8 mb-8">
+                <h1 class="text-4xl font-extrabold mb-4 text-white tracking-tight">Conversazioni Quotidiane in Italia</h1>
+                <p class="text-lg text-slate-400 mb-8 leading-relaxed max-w-3xl">
+                    Benvenuti nel vostro ambiente di apprendimento. Questa sezione contestualizza le situazioni reali incontrate nel video, ottimizzate per il livello A2.
+                </p>
+                
+                <div class="bg-slate-800/50 p-8 rounded-xl border-l-4 border-[#10b981] shadow-2xl">
+                    <h2 class="text-xl font-bold mb-6 flex items-center text-white">
+                        <span class="p-2 bg-[#10b981]/10 rounded-lg mr-3">📝</span> Riassunto del Contenuto (Livello A2)
+                    </h2>
+                    <div class="space-y-4 text-slate-300 leading-relaxed text-base">
+                        <p>
+                            In questo video, vediamo diverse persone che parlano della loro vita quotidiana in Italia. All'inizio, due amici parlano dei loro hobby: a Marco piace ascoltare musica rock e fare passeggiate al parco, mentre Laura preferisce leggere libri e vuole imparare a dipingere.
+                        </p>
+                        <p>
+                            Successivamente, il video mostra situazioni comuni all'università e in città. Due studenti fanno colazione insieme e parlano delle loro lezioni preferite, come storia dell'arte. Altri ragazzi ordinano una pizza a domicilio e sono molto contenti perché la pizza è calda e buona.
+                        </p>
+                        <p>
+                            Il video include anche conversazioni sui trasporti, come prendere un taxi per l'aeroporto o comprare un biglietto del treno per Milano. Tutte queste situazioni sono fondamentali per chi vive in Italia, utilizzando espressioni quotidiane.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="mt-10">
+                    <button onclick="switchTab('vocab')" class="group relative inline-flex items-center justify-center px-8 py-4 font-bold text-white transition-all duration-200 bg-[#10b981] font-pj rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 hover:bg-[#059669]">
+                        Inizia lo studio ➔
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- VOCAB SECTION -->
+        <section id="sec-vocab" class="hidden animate-in fade-in duration-500">
+            <div class="mb-10">
+                <h2 class="text-3xl font-bold mb-3 text-white">Glossario Interattivo <span class="text-sm font-normal text-slate-500 ml-2">B2 Mastery</span></h2>
+                <p class="text-lg text-slate-400 mb-8">
+                    Esplora le espressioni più sfidanti. Clicca su ogni scheda per sbloccare traduzioni ed esempi.
+                </p>
+                
+                <div class="relative max-w-xl mb-12">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-500">🔍</span>
+                    <input type="text" id="searchInput" placeholder="Filtra termini..." class="w-full pl-12 pr-4 py-4 bg-slate-800/50 border border-white/10 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#10b981] text-white placeholder-slate-500 shadow-inner">
+                </div>
+
+                <div id="vocabGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Dynamic Content -->
+                </div>
+            </div>
+        </section>
+
+        <!-- STATS SECTION -->
+        <section id="sec-stats" class="hidden animate-in fade-in duration-500">
+            <div class="glass-panel rounded-2xl p-8 border border-white/5">
+                <h2 class="text-3xl font-bold mb-3 text-white text-center">Analisi del Lessico</h2>
+                <p class="text-lg text-slate-400 mb-12 text-center max-w-2xl mx-auto">
+                    Visualizzazione della distribuzione grammaticale dei 20 termini avanzati studiati.
+                </p>
+
+                <div class="flex flex-col lg:flex-row items-center justify-around gap-12">
+                    <div class="w-full lg:w-1/2 flex justify-center">
+                        <div class="chart-container">
+                            <canvas id="categoryChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="w-full lg:w-1/3">
+                        <div class="bg-slate-800/80 p-8 rounded-2xl border border-white/5 shadow-xl">
+                            <h3 class="text-xl font-bold mb-6 text-[#10b981]">Performance Overview</h3>
+                            <div class="space-y-4">
+                                <div class="flex justify-between items-center p-3 bg-slate-900/50 rounded-lg">
+                                    <span class="text-slate-400">Target Level</span>
+                                    <span class="font-bold text-white px-2 py-1 bg-[#8b5cf6]/20 text-[#8b5cf6] rounded">B2</span>
+                                </div>
+                                <div class="flex justify-between items-center p-3 bg-slate-900/50 rounded-lg">
+                                    <span class="text-slate-400">Sostantivi</span>
+                                    <span class="font-bold text-white">6</span>
+                                </div>
+                                <div class="flex justify-between items-center p-3 bg-slate-900/50 rounded-lg">
+                                    <span class="text-slate-400">Verbi</span>
+                                    <span class="font-bold text-white">5</span>
+                                </div>
+                                <div class="flex justify-between items-center p-3 bg-slate-900/50 rounded-lg">
+                                    <span class="text-slate-400">Aggettivi</span>
+                                    <span class="font-bold text-white">5</span>
+                                </div>
+                                <div class="flex justify-between items-center p-3 bg-slate-900/50 rounded-lg border-t border-white/5 mt-4 pt-4">
+                                    <span class="text-slate-200 font-semibold text-lg">Totale Termini</span>
+                                    <span class="text-2xl font-black text-[#10b981]">20</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="border-t border-white/5 py-8 mt-auto">
+        <div class="max-w-6xl mx-auto px-4 text-center">
+            <p class="text-slate-500 text-sm">
+                Italiano Interattivo &copy; 2026 | Modalità Notte Attiva
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        const vocabData = [
+            { it: "Ti va?", en: "Do you feel like it?", ex1: "Ti va di mangiare una pizza stasera?", ex2: "Non mi va di studiare adesso.", category: "Espressioni" },
+            { it: "Essere negato/a", en: "To be hopeless at", ex1: "Io sono negata per la matematica.", ex2: "Paolo è negato per il calcio.", category: "Espressioni" },
+            { it: "Rilassante", en: "Relaxing", ex1: "Leggere un libro è molto rilassante.", ex2: "Mi piace fare un bagno caldo.", category: "Aggettivi" },
+            { it: "Incredibile", en: "Incredible", ex1: "Questo gelato ha un gusto incredibile!", ex2: "È incredibile che tu sia qui.", category: "Aggettivi" },
+            { it: "A domicilio", en: "Home delivery", ex1: "Ordiniamo la cena a domicilio?", ex2: "Consegna a domicilio gratuita.", category: "Espressioni" },
+            { it: "Assaggiare", en: "To taste", ex1: "Vuoi assaggiare la mia torta?", ex2: "Mi piace assaggiare piatti nuovi.", category: "Verbi" },
+            { it: "Appariscente", en: "Flashy", ex1: "Quel vestito è troppo appariscente.", ex2: "Una casa non appariscente.", category: "Aggettivi" },
+            { it: "Resistente", en: "Durable", ex1: "Questo tavolo è molto resistente.", ex2: "Un ombrello resistente al vento.", category: "Aggettivi" },
+            { it: "Drenaggio", en: "Drainage", ex1: "Il foro serve per il drenaggio.", ex2: "Importante per la salute delle piante.", category: "Sostantivi" },
+            { it: "Esagerare", en: "To overdo", ex1: "Non esagerare con lo zucchero.", ex2: "Mi piace, ma non voglio esagerare.", category: "Verbi" },
+            { it: "Svolgersi", en: "To take place", ex1: "La lezione si svolge in aula 4.", ex2: "L'evento si svolge domani.", category: "Verbi" },
+            { it: "Noleggiare", en: "To rent", ex1: "Vogliamo noleggiare una bici.", ex2: "Puoi noleggiare gli sci qui.", category: "Verbi" },
+            { it: "Inconveniente", en: "Mishap", ex1: "Un piccolo inconveniente tecnico.", ex2: "Scusate per l'inconveniente.", category: "Sostantivi" },
+            { it: "Controindicazione", en: "Side effect", ex1: "Nessuna controindicazione nota.", ex2: "Leggi le controindicazioni.", category: "Sostantivi" },
+            { it: "Docente", en: "Professor", ex1: "Il docente spiega molto bene.", ex2: "Parla con la docente ora.", category: "Sostantivi" },
+            { it: "Sottovaso", en: "Saucer", ex1: "Un sottovaso per non sporcare.", ex2: "Vaso e sottovaso abbinati.", category: "Sostantivi" },
+            { it: "Opaco", en: "Matte", ex1: "Preferisco il nero opaco.", ex2: "Il vetro è diventato opaco.", category: "Aggettivi" },
+            { it: "Appena", en: "Just now", ex1: "Ho appena finito di studiare.", ex2: "Il treno è appena partito.", category: "Espressioni" },
+            { it: "Consiglio", en: "Advice", ex1: "Grazie per il tuo consiglio.", ex2: "Ti do un buon consiglio.", category: "Sostantivi" },
+            { it: "Convalidare", en: "To validate", ex1: "Convalida il biglietto sul bus.", ex2: "Non serve convalidare online.", category: "Verbi" }
+        ];
+
+        let chartInstance = null;
+
+        function switchTab(tabId) {
+            ['intro', 'vocab', 'stats'].forEach(id => {
+                document.getElementById('sec-' + id).classList.add('hidden');
+                document.getElementById('btn-' + id).classList.remove('active');
+            });
+            
+            document.getElementById('sec-' + tabId).classList.remove('hidden');
+            document.getElementById('btn-' + tabId).classList.add('active');
+
+            if (tabId === 'stats' && !chartInstance) {
+                renderChart();
+            }
+        }
+
+        function createVocabCard(data) {
+            const card = document.createElement('div');
+            card.className = 'vocab-card rounded-2xl p-6 shadow-sm';
+            
+            card.innerHTML = `
+                <div class="flex justify-between items-center mb-1">
+                    <h3 class="text-lg font-bold text-white">${data.it}</h3>
+                    <span class="text-xs font-semibold px-2 py-0.5 rounded bg-white/5 text-slate-500 uppercase tracking-widest">${data.category}</span>
+                </div>
+                <p class="text-slate-500 text-sm">Clicca per espandere</p>
+                <div class="hidden-content mt-6 pt-6 border-t border-white/5">
+                    <p class="text-lg font-bold text-[#10b981] mb-4">${data.en}</p>
+                    <div class="space-y-3">
+                        <div class="p-3 bg-slate-900/50 rounded-xl border border-white/5">
+                            <span class="block text-[10px] text-slate-500 font-bold uppercase mb-1">Esempio 1</span>
+                            <p class="text-sm text-slate-300 italic">"${data.ex1}"</p>
+                        </div>
+                        <div class="p-3 bg-slate-900/50 rounded-xl border border-white/5">
+                            <span class="block text-[10px] text-slate-500 font-bold uppercase mb-1">Esempio 2</span>
+                            <p class="text-sm text-slate-300 italic">"${data.ex2}"</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            card.addEventListener('click', () => {
+                card.classList.toggle('expanded');
+            });
+
+            return card;
+        }
+
+        function renderVocab(filterText = '') {
+            const grid = document.getElementById('vocabGrid');
+            grid.innerHTML = '';
+            const lowerFilter = filterText.toLowerCase();
+            
+            vocabData
+                .filter(i => i.it.toLowerCase().includes(lowerFilter) || i.en.toLowerCase().includes(lowerFilter))
+                .forEach(item => grid.appendChild(createVocabCard(item)));
+        }
+
+        function renderChart() {
+            const ctx = document.getElementById('categoryChart').getContext('2d');
+            chartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Sostantivi', 'Verbi', 'Aggettivi', 'Espressioni'],
+                    datasets: [{
+                        data: [6, 5, 5, 4],
+                        backgroundColor: ['#10b981', '#8b5cf6', '#3b82f6', '#f43f5e'],
+                        borderColor: '#0f172a',
+                        borderWidth: 4,
+                        hoverOffset: 15
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#94a3b8',
+                                padding: 25,
+                                font: { size: 13, weight: '600' },
+                                usePointStyle: true
+                            }
+                        }
+                    },
+                    cutout: '75%'
+                }
+            });
+        }
+
+        document.getElementById('searchInput').addEventListener('input', (e) => renderVocab(e.target.value));
+        window.addEventListener('DOMContentLoaded', () => renderVocab());
+    </script>
+</body>
+</html>
